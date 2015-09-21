@@ -1,4 +1,4 @@
-#include <string>
+#include <string.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -8,7 +8,9 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <pwd.h>
+#include <tuple>
 #include "program.h"
+#include "alias.h"
 
 #ifndef PROFILE_FILE_PATH
 #define PROFILE_FILE_PATH ".shell_profile"
@@ -91,6 +93,10 @@ int main (int argc, char **argv) {
 	}
 
 	//Process alias file
+  	std::vector<alias_tuple> alias;
+	std::string alias_path = home + ALIAS_FILE;
+  	alias = read_alias(alias_path);
+
 	std::string frst_wrd_command;	// First command's word
 	std::string rst_command;		// Rest of the command
 	char cwd[1024]; 				// Current working directory max length is 1024
@@ -116,10 +122,17 @@ int main (int argc, char **argv) {
 				frst_wrd_command == "QUIT") {
 
 				return 0;
-			} else if (0) { // Alias definition
-				/* code */
-			} else if (0) { // Alias usage from definitions
-				/* code */
+			} else if (frst_wrd_command == "alias") { // Alias definition
+				if (rst_command == "")
+					print_alias(alias);
+				else
+        	insert_alias(rst_command, '=', alias, alias_path, 0);
+			} else if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
+        		int alias_elem = is_alias(frst_wrd_command, alias);
+				std::string alias_command = std::get<1>(alias[alias_elem]);
+				int space = alias_command.find(" ");
+        		frst_wrd_command = alias_command.substr(0, space);
+				rst_command = alias_command.substr(space+1); // + rst_command;
 			} else if (frst_wrd_command == "cd") {
 				if (rst_command.size() == 0) {
 					if (chdir(home.c_str()) != 0) {
