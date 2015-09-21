@@ -1,6 +1,8 @@
 #ifndef ALIAS_H
 #define ALIAS_H
 
+#include <tuple>
+
 #define ALIAS_FILE ".alias"
 #define ALIAS_SIZE 32
 

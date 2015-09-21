@@ -8,7 +8,6 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <pwd.h>
-#include <tuple>
 #include "program.h"
 #include "alias.h"
 
