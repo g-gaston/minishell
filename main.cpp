@@ -1,4 +1,4 @@
-#include <string>
+#include <string.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -7,13 +7,14 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <tuple>
 #include "program.h"
 #include "alias.h"
 
 #ifndef PROFILE_FILE_PATH
 #define PROFILE_FILE_PATH ".shell_profile"
 #endif
-#define ALIAS_FILE:PATH ".alias"
+#define ALIAS_FILE_PATH ".alias"
 #define ALIAS_SIZE 32
 
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
@@ -113,7 +114,7 @@ int main (int argc, char **argv) {
 
 				return 0;
 			} else if (frst_wrd_command == "alias") { // Alias definition
-        insert_alias(rst_command.substr(1, rst_command.size()-1), '=', alias, 0);
+        insert_alias(rst_command, '=', alias, 0);
 			} else if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
         int alias_elem = is_alias(frst_wrd_command, alias);
         frst_wrd_command = std::get<1>(alias[alias_elem]);

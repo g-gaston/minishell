@@ -4,6 +4,7 @@
 #include <tuple>
 #include <sstream>
 #include <fstream>
+#include "alias.h"
 
 #define ALIAS_FILE_PATH ".alias"
 #define ALIAS_SIZE 32
@@ -12,6 +13,7 @@
 // TODO Meter alias.reserve? Tamaño de cada tuple? Si se mete, sustituir alias.size() por variable que lleve la cuenta
 // Tratar comando alias (unir frst_wrd_command y rst_command y volver a separarlos?)
 
+int check_alias (std::string new_alias, std::vector<alias_tuple> alias_list);
 
 std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::vector<alias_tuple> &elems, int from_file) {
   // Get words from line
