@@ -20,11 +20,12 @@ std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::ve
   }
 	std::cout << "item[0]: " << items[0] << "; items[1]: " << items[1] << std::endl;
 	// Remove " or ' when needed
-  if (items[1].at(0) == '"' | items[1].at(0) == '\'')
-		items[1] = items[1].substr(1, items[1].size());
-	if (items[1].at(items[1].size()-1) == '"' | items[1].at(items[1].size()-1) == '\'')
-		items[1] = items[1].substr(0, items[1].size()-1);
-
+	if (items[1].size() > 0) {
+  	if (items[1].at(0) == '"' | items[1].at(0) == '\'')
+			items[1] = items[1].substr(1, items[1].size());
+		if (items[1].at(items[1].size()-1) == '"' | items[1].at(items[1].size()-1) == '\'')
+			items[1] = items[1].substr(0, items[1].size()-1);
+	}
   // Check alias and update vector (do nothing if check_alias returns error)
   int check = check_alias(items[0], items[1], elems);
   // Element repeated
@@ -33,7 +34,7 @@ std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::ve
     std::ofstream ofs;
     ofs.open(alias_path, std::ofstream::out | std::ofstream::trunc);
     for (int i = 0; i < elems.size(); i++) {
-      ofs << std::get<0>(elems[i]) << " " << std::get<1>(elems[i]) << "\n";
+      ofs << std::get<0>(elems[i]) << "=\"" << std::get<1>(elems[i]) << "\"\n";
     }
     ofs.close();
   }
@@ -43,7 +44,7 @@ std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::ve
 		// If we're not loading the aliases from the file, we update the file
     if (!from_file) {
       std::ofstream out(alias_path, std::ios::app);
-      out << items[0] << " " << items[1] << "\n";
+      out << items[0] << "=\"" << items[1] << "\"\n";
       out.close();
     }
   }
@@ -101,7 +102,7 @@ std::vector<alias_tuple> read_alias(std::string alias_path) {
       break;
     std::getline(alias_file, line);
     if (!line.empty()) {
-      insert_alias(line, ' ', alias, alias_path, 1);
+      insert_alias(line, '=', alias, alias_path, 1);
     }
   } 
 

@@ -119,8 +119,11 @@ int main (int argc, char **argv) {
         	insert_alias(rst_command, '=', alias, alias_path, 0);
 			} else if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
         int alias_elem = is_alias(frst_wrd_command, alias);
-        frst_wrd_command = std::get<1>(alias[alias_elem]);
-        std::cout << frst_wrd_command << std::endl;
+				std::string alias_command = std::get<1>(alias[alias_elem]);
+				int space = alias_command.find(" ");
+        frst_wrd_command = alias_command.substr(0, space);
+				rst_command = alias_command.substr(space+1); // + rst_command;
+        std::cout << "frst_command: " << frst_wrd_command << "; rst_command: " << rst_command << std::endl;
 			} else if (frst_wrd_command == "cd") {
 				if (rst_command.size() == 0) {
 					if (chdir(home.c_str()) != 0) {
