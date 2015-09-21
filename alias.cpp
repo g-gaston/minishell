@@ -6,16 +6,13 @@
 #include <fstream>
 #include "alias.h"
 
-#define ALIAS_FILE_PATH ".alias"
-#define ALIAS_SIZE 32
-
 // TODO Cambiar ALIAS_FILE_PATH por absoluto? Si se cambia de directorio, no se actualiza el fichero correctamente
 // TODO Meter alias.reserve? Tamaño de cada tuple? Si se mete, sustituir alias.size() por variable que lleve la cuenta
 // Tratar comando alias (unir frst_wrd_command y rst_command y volver a separarlos?)
 
-int check_alias (std::string new_alias, std::vector<alias_tuple> alias_list);
+int check_alias (std::string new_alias,std::string new_command, std::vector<alias_tuple> alias_list);
 
-std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::vector<alias_tuple> &elems, int from_file) {
+std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::vector<alias_tuple> &elems, std::string alias_path, int from_file) {
   // Get words from line
   std::stringstream ss(s);
   std::string items[2];
@@ -24,12 +21,12 @@ std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::ve
   }
   
   // Check alias and update vector (do nothing if check_alias returns error)
-  int check = check_alias(items[0], elems);
+  int check = check_alias(items[0], items[1], elems);
   // Element repeated
   if (check > 0) {
-    elems.erase(elems.begin()+check);
+    elems.erase(elems.begin()+check-1);
     std::ofstream ofs;
-    ofs.open(ALIAS_FILE_PATH, std::ofstream::out | std::ofstream::trunc);
+    ofs.open(alias_path, std::ofstream::out | std::ofstream::trunc);
     for (int i = 0; i < elems.size(); i++) {
       ofs << std::get<0>(elems[i]) << " " << std::get<1>(elems[i]) << "\n";
     }
@@ -38,8 +35,9 @@ std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::ve
   // Add element
   if (check >= 0) {
     elems.push_back(alias_tuple(items[0], items[1]));
+		// If we're not loading the aliases from the file, we update the file
     if (!from_file) {
-      std::ofstream out(ALIAS_FILE_PATH, std::ios::app);
+      std::ofstream out(alias_path, std::ios::app);
       out << items[0] << " " << items[1] << "\n";
       out.close();
     }
@@ -49,27 +47,27 @@ std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::ve
 }
 
 
-int check_alias (std::string new_alias, std::vector<alias_tuple> alias_list) {
-  // Alias list full
-  if (alias_list.size() >= ALIAS_SIZE) {
-    std::cerr << "Alias list full. Cannot add anymore." << std::endl;
-    return -1;
+int check_alias (std::string new_alias, std::string new_command, std::vector<alias_tuple> alias_list) {
+  // Avoid loops with aliases
+  for (int i = 0; i < alias_list.size(); i++) {
+    if (new_alias == std::get<1>(alias_list[i]) | new_command == std::get<0>(alias_list[i])) {
+      std::cerr << "Loophole avoided" << std::endl;
+      return -1;
+    }
   }
   // Repeated element
   for (int i = 0; i < alias_list.size(); i++) {
     if (new_alias == std::get<0>(alias_list[i])) {
 #ifdef DEBUG      
-      std::cout << "removed row: " << i << std::endl;
+      std::cout << "removed row: " << i+1 << std::endl;
 #endif
-      return i+1;      
+      return i+1;
     }
   }
-  // Avoid loops with aliases
-  for (int i = 0; i < alias_list.size(); i++) {
-    if (new_alias == std::get<1>(alias_list[i])) {
-      std::cerr << "Loophole avoided" << std::endl;
-      return -1;
-    }
+  // Alias list full
+  if (alias_list.size() >= ALIAS_SIZE) {
+    std::cerr << "Alias list full. Cannot add anymore." << std::endl;
+    return -1;
   }
   return 0; 
 
@@ -83,9 +81,9 @@ void print_alias(std::vector<alias_tuple> alias) {
   }
 }
 
-std::vector<alias_tuple> read_alias() {
+std::vector<alias_tuple> read_alias(std::string alias_path) {
   std::vector<alias_tuple> alias;
-  std::ifstream alias_file(ALIAS_FILE_PATH);
+  std::ifstream alias_file(alias_path);
   
   if (!alias_file) {
     std::cerr << "Alias file not found" << std::endl;
@@ -98,7 +96,7 @@ std::vector<alias_tuple> read_alias() {
       break;
     std::getline(alias_file, line);
     if (!line.empty()) {
-      insert_alias(line, ' ', alias, 1);
+      insert_alias(line, ' ', alias, alias_path, 1);
     }
   } 
 
