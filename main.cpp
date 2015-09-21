@@ -89,7 +89,6 @@ int main (int argc, char **argv) {
 		}
 	}
 
-	std::cout << home << std::endl;
 	//Process alias file
   std::vector<alias_tuple> alias;
 	std::string alias_path = home + ALIAS_FILE;
@@ -114,7 +113,10 @@ int main (int argc, char **argv) {
 
 				return 0;
 			} else if (frst_wrd_command == "alias") { // Alias definition
-        insert_alias(rst_command, '=', alias, alias_path, 0);
+				if (rst_command == "")
+					print_alias(alias);
+				else
+        	insert_alias(rst_command, '=', alias, alias_path, 0);
 			} else if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
         int alias_elem = is_alias(frst_wrd_command, alias);
         frst_wrd_command = std::get<1>(alias[alias_elem]);

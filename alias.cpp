@@ -6,7 +6,6 @@
 #include <fstream>
 #include "alias.h"
 
-// TODO Cambiar ALIAS_FILE_PATH por absoluto? Si se cambia de directorio, no se actualiza el fichero correctamente
 // TODO Meter alias.reserve? Tamaño de cada tuple? Si se mete, sustituir alias.size() por variable que lleve la cuenta
 // Tratar comando alias (unir frst_wrd_command y rst_command y volver a separarlos?)
 
@@ -19,7 +18,13 @@ std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::ve
   for (int i = 0; i < 2; i++) {
     std::getline(ss, items[i], delim);
   }
-  
+	std::cout << "item[0]: " << items[0] << "; items[1]: " << items[1] << std::endl;
+	// Remove " or ' when needed
+  if (items[1].at(0) == '"' | items[1].at(0) == '\'')
+		items[1] = items[1].substr(1, items[1].size());
+	if (items[1].at(items[1].size()-1) == '"' | items[1].at(items[1].size()-1) == '\'')
+		items[1] = items[1].substr(0, items[1].size()-1);
+
   // Check alias and update vector (do nothing if check_alias returns error)
   int check = check_alias(items[0], items[1], elems);
   // Element repeated
