@@ -88,18 +88,24 @@ int main (int argc, char **argv) {
 	}
 
 	//Process alias file
-
 	std::string frst_wrd_command;	// First command's word
 	std::string rst_command;		// Rest of the command
 	char cwd[1024]; 				// Current working directory max length is 1024
 
 	while (true) {
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
-			std::cout << std::string(cwd) << "$ "; 	// Print prompt
-			std::cin >> frst_wrd_command; 			// Read user command first word
-			std::getline (std::cin, rst_command);	// Read rest of user command
-			if (rst_command.size() > 0) {
-				rst_command = rst_command.substr(1, rst_command.size()-1); // Delete space
+			std::cout << std::string(cwd) << "$ "; 				// Print prompt
+			std::getline (std::cin, rst_command);				// Read user command
+			std::istringstream aux_stream (rst_command);
+			while (aux_stream.peek() == ' ') { 					// Skip spaces at beginning
+				aux_stream.get();
+			}
+			std::getline(aux_stream, frst_wrd_command, ' ');	// Get user command first word
+			rst_command = "";
+			std::getline(aux_stream, rst_command);				// Get rest of user command
+
+			if (frst_wrd_command.size() == 0) {					// Skip if empty line
+				continue;
 			}
 
 			if (frst_wrd_command == "quit" ||
