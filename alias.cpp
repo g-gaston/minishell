@@ -18,7 +18,6 @@ std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::ve
   for (int i = 0; i < 2; i++) {
     std::getline(ss, items[i], delim);
   }
-	std::cout << "item[0]: " << items[0] << "; items[1]: " << items[1] << std::endl;
 	// Remove " or ' when needed
 	if (items[1].size() > 0) {
   	if (items[1].at(0) == '"' | items[1].at(0) == '\'')
