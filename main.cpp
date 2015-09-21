@@ -90,21 +90,28 @@ int main (int argc, char **argv) {
 	}
 
 	//Process alias file
-  std::vector<alias_tuple> alias;
+  	std::vector<alias_tuple> alias;
 	std::string alias_path = home + ALIAS_FILE;
-  alias = read_alias(alias_path);
-  
+  	alias = read_alias(alias_path);
+
 	std::string frst_wrd_command;	// First command's word
 	std::string rst_command;		// Rest of the command
 	char cwd[1024]; 				// Current working directory max length is 1024
 
 	while (true) {
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
-			std::cout << std::string(cwd) << "$ "; 	// Print prompt
-			std::cin >> frst_wrd_command; 			// Read user command first word
-			std::getline (std::cin, rst_command);	// Read rest of user command
-			if (rst_command.size() > 0) {
-				rst_command = rst_command.substr(1, rst_command.size()-1); // Delete space
+			std::cout << std::string(cwd) << "$ "; 				// Print prompt
+			std::getline (std::cin, rst_command);				// Read user command
+			std::istringstream aux_stream (rst_command);
+			while (aux_stream.peek() == ' ') { 					// Skip spaces at beginning
+				aux_stream.get();
+			}
+			std::getline(aux_stream, frst_wrd_command, ' ');	// Get user command first word
+			rst_command = "";
+			std::getline(aux_stream, rst_command);				// Get rest of user command
+
+			if (frst_wrd_command.size() == 0) {					// Skip if empty line
+				continue;
 			}
 
 			if (frst_wrd_command == "quit" ||
@@ -118,12 +125,11 @@ int main (int argc, char **argv) {
 				else
         	insert_alias(rst_command, '=', alias, alias_path, 0);
 			} else if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
-        int alias_elem = is_alias(frst_wrd_command, alias);
+        		int alias_elem = is_alias(frst_wrd_command, alias);
 				std::string alias_command = std::get<1>(alias[alias_elem]);
 				int space = alias_command.find(" ");
-        frst_wrd_command = alias_command.substr(0, space);
+        		frst_wrd_command = alias_command.substr(0, space);
 				rst_command = alias_command.substr(space+1); // + rst_command;
-        std::cout << "frst_command: " << frst_wrd_command << "; rst_command: " << rst_command << std::endl;
 			} else if (frst_wrd_command == "cd") {
 				if (rst_command.size() == 0) {
 					if (chdir(home.c_str()) != 0) {
