@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <pwd.h>
 #include "program.h"
 #include "alias.h"
 
@@ -59,10 +60,12 @@ std::vector<Program> &listprograms(const char *name, int level, std::vector<Prog
 
 int main (int argc, char **argv) {
 
+	// Get user home dir
+	std::string home = std::string(getpwuid(getuid())->pw_dir) + "/";
+
 	// Process profile file
-	std::ifstream profile_file(PROFILE_FILE_PATH);
+	std::ifstream profile_file(home + PROFILE_FILE_PATH);
 	std::vector<std::string> paths;
-	std::string home = "/home/";
 	std::vector<Program> programs;
 
 	if (!profile_file) {
@@ -78,7 +81,7 @@ int main (int argc, char **argv) {
 			    // Read programs in PATH
 			    listprograms((*i).c_str(), 0, programs);
 			}
-		} else if (line.substr(0,5) == "HOME=") {
+		} else if (line.substr(0,5) == "HOME=") {	// Get HOME work dir if specified in profile file
 			home = line.substr(5,line.size()-1);
 			// Change current directory to HOME
 			if (chdir(home.c_str()) != 0) {
