@@ -154,7 +154,8 @@ int main (int argc, char **argv) {
 				if (i != programs.end()) {
 					// Call here the program in "(*i).get_path()"
 					//The execvp() look for the command in the PATH, so maybe this part could be reduce
-					if(command_launch((*i).get_path() + frst_wrd_command,rst_command) != 1){
+					std::cout << "Entramos en el if" << std::endl;
+					if(command_launch((*i).get_path(),rst_command) != 1){
 						std::cerr << "Problem executing the command " << frst_wrd_command << std::endl;
 					}
 
