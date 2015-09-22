@@ -142,6 +142,49 @@ int main (int argc, char **argv) {
 						std::cerr << "Problem opening directory: " << rst_command << std::endl;
 					}
 				}
+			} else if (frst_wrd_command == "if") {
+				std::vector<std::string> if_commands;
+				aux_stream.clear();
+				aux_stream.seekg (0, aux_stream.beg);
+				aux_stream.str(rst_command);
+				std::getline(aux_stream, rst_command, ';'); // First command
+				if_commands.push_back(rst_command);
+				aux_stream >> rst_command;
+				if (rst_command != "then") {
+					/* error, malformed if then command */
+					std::cerr << "error, malformed if-then command, \"then\" not detected, instead " << rst_command << std::endl;
+					continue;
+				}
+				aux_stream.get(); // Skip space
+				std::getline(aux_stream, rst_command, ';'); // Second command
+				if_commands.push_back(rst_command);
+				aux_stream >> rst_command;
+				if (rst_command != "else") {
+					/* error, malformed if then command */
+					std::cerr << "error, malformed if-then command: \"else\" not detected, instead " << rst_command << std::endl;
+					continue;
+				}
+				aux_stream.get(); // Skip space
+				aux_stream >> frst_wrd_command;
+				if (frst_wrd_command == "fi") {
+					std::cerr << "error, malformed if-then command: \"fi\" detected, instead of third command" << std::endl;
+					continue;
+				}
+				while (aux_stream >> rst_command) {
+					if (rst_command != "fi") {
+						frst_wrd_command = frst_wrd_command + " " + rst_command;
+					} else {
+						break;
+					}
+				}
+				if (rst_command != "fi") {
+					/* error, malformed if then command */
+					std::cerr << "error, malformed if-then command: \"fi\" not detected, instead " << rst_command << std::endl;
+					continue;
+				}
+				if_commands.push_back(frst_wrd_command);	// Third command
+				// Call here subprocess with those arguments
+
 			} else {	   // Should be a program from PATH
 				std::vector<Program>::iterator i;
 				for (i = programs.begin(); i != programs.end(); ++i) {
