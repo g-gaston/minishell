@@ -1,16 +1,23 @@
+
+CC=clang++ -DDEBUG=1
+
 all: shell
 
-shell: main.o program.o command.o
-	clang++ main.o program.o command.o -o shell
+shell: main.o program.o alias.o command.o
+	$(CC) main.o program.o alias.o command.o -o shell
 
 main.o: main.cpp
-	clang++ -c main.cpp
+	$(CC) -c main.cpp -std=c++11
 
 program.o: program.cpp
-	clang++ -c program.cpp
+	$(CC) -c program.cpp
+
+alias.o: alias.cpp
+	$(CC) -c alias.cpp -std=c++11
 
 command.o: command.cpp
-	clang++ -c command.cpp
+	$(CC) -c command.cpp
 
 clean:
-	rm *o shell
+	$(RM) *o *~ shell
+

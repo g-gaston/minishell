@@ -1,4 +1,4 @@
-#include <string>
+#include <string.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -7,9 +7,10 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <pwd.h>
 #include "program.h"
 #include "command.h"
-
+#include "alias.h"
 
 #ifndef PROFILE_FILE_PATH
 #define PROFILE_FILE_PATH ".shell_profile"
@@ -60,10 +61,12 @@ std::vector<Program> &listprograms(const char *name, int level, std::vector<Prog
 
 int main (int argc, char **argv) {
 
+	// Get user home dir
+	std::string home = std::string(getpwuid(getuid())->pw_dir) + "/";
+
 	// Process profile file
-	std::ifstream profile_file(PROFILE_FILE_PATH);
+	std::ifstream profile_file(home + PROFILE_FILE_PATH);
 	std::vector<std::string> paths;
-	std::string home = "/home/";
 	std::vector<Program> programs;
 
 	if (!profile_file) {
@@ -79,7 +82,7 @@ int main (int argc, char **argv) {
 			    // Read programs in PATH
 			    listprograms((*i).c_str(), 0, programs);
 			}
-		} else if (line.substr(0,5) == "HOME=") {
+		} else if (line.substr(0,5) == "HOME=") {	// Get HOME work dir if specified in profile file
 			home = line.substr(5,line.size()-1);
 			// Change current directory to HOME
 			if (chdir(home.c_str()) != 0) {
@@ -90,6 +93,9 @@ int main (int argc, char **argv) {
 	}
 
 	//Process alias file
+  	std::vector<alias_tuple> alias;
+	std::string alias_path = home + ALIAS_FILE;
+  	alias = read_alias(alias_path);
 
 	std::string frst_wrd_command;	// First command's word
 	std::string rst_command;		// Rest of the command
@@ -97,11 +103,18 @@ int main (int argc, char **argv) {
 
 	while (true) {
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
-			std::cout << std::string(cwd) << "$ "; 	// Print prompt
-			std::cin >> frst_wrd_command; 			// Read user command first word
-			std::getline (std::cin, rst_command);	// Read rest of user command
-			if (rst_command.size() > 0) {
-				rst_command = rst_command.substr(1, rst_command.size()-1); // Delete space
+			std::cout << std::string(cwd) << "$ "; 				// Print prompt
+			std::getline (std::cin, rst_command);				// Read user command
+			std::istringstream aux_stream (rst_command);
+			while (aux_stream.peek() == ' ') { 					// Skip spaces at beginning
+				aux_stream.get();
+			}
+			std::getline(aux_stream, frst_wrd_command, ' ');	// Get user command first word
+			rst_command = "";
+			std::getline(aux_stream, rst_command);				// Get rest of user command
+
+			if (frst_wrd_command.size() == 0) {					// Skip if empty line
+				continue;
 			}
 
 			if (frst_wrd_command == "quit" ||
@@ -109,10 +122,17 @@ int main (int argc, char **argv) {
 				frst_wrd_command == "QUIT") {
 
 				return 0;
-			} else if (0) { // Alias definition
-				/* code */
-			} else if (0) { // Alias usage from definitions
-				/* code */
+			} else if (frst_wrd_command == "alias") { // Alias definition
+				if (rst_command == "")
+					print_alias(alias);
+				else
+        	insert_alias(rst_command, '=', alias, alias_path, 0);
+			} else if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
+        		int alias_elem = is_alias(frst_wrd_command, alias);
+				std::string alias_command = std::get<1>(alias[alias_elem]);
+				int space = alias_command.find(" ");
+        		frst_wrd_command = alias_command.substr(0, space);
+				rst_command = alias_command.substr(space+1); // + rst_command;
 			} else if (frst_wrd_command == "cd") {
 				if (rst_command.size() == 0) {
 					if (chdir(home.c_str()) != 0) {
