@@ -8,6 +8,8 @@
 #include <dirent.h>
 #include <stdio.h>
 #include "program.h"
+#include "command.h"
+
 
 #ifndef PROFILE_FILE_PATH
 #define PROFILE_FILE_PATH ".shell_profile"
@@ -131,6 +133,14 @@ int main (int argc, char **argv) {
 				}
 				if (i != programs.end()) {
 					// Call here the program in "(*i).get_path()"
+					//The execvp() look for the command in the PATH, so maybe this part could be reduce
+					if(command_launch((*i).get_path() + frst_wrd_command,rst_command) != 1){
+						std::cerr << "Problem executing the command " << frst_wrd_command << std::endl;
+					}
+
+
+
+
 				} else {
 					std::cout << frst_wrd_command << ": program not found " << std::endl;
 				}
