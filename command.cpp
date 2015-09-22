@@ -6,6 +6,9 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <vector>
+#include <list>
+#include <sstream>
+
 
 pid_t pid;
 typedef void sigfunc(int);
@@ -30,30 +33,31 @@ int command_launch(std::string frst_wrd_command, std::string rst_command)
 
   //Registering the handler in the kernel
   if (signal(SIGALRM, sig_handler) == SIG_ERR)
-#ifdef DEBUG 
+#ifdef DEBUG
       std::cout << "\ncan't catch SIGALRM\n" << std::endl;
 #endif
 
   pid = fork();
   if (pid == 0) {
     // Child process
-    int len = rst_command.length();
 
-    //create the correct type of pointer and point it to an array of chars:
-    char* const myArr = new char[len + 1];
+    std::istringstream ss(rst_command);
+    std::string arg;
+    std::list<std::string> ls;
+    std::vector<char*> v;
 
-    //copy string into the array:
-    for(int i=0; i < len; i++)
-    {
-      myArr[i] = rst_command[i];
+    ls.push_back(frst_wrd_command);                           // Program name in first position
+    v.push_back(const_cast<char*>(ls.back().c_str()));
+
+    while (ss >> arg)                                         // Construct vector word by word, does not support quoting
+    {                                                         // Quotes should be processes as one only argument, needs improvement
+       ls.push_back(arg);
+       v.push_back(const_cast<char*>(ls.back().c_str()));
     }
-    myArr[len]='\0';
-  
-  //create the array of pointers required by the function:
-    char* const argv[] = {myArr};
+    v.push_back(0);  // need terminating null pointer
 
-    if (execv(frst_wrd_command.c_str(), argv) == -1) {
-      std::cerr << "Problem executing command" << std::endl;
+    if (execv(v[0], &v[0]) == -1) {                           // Execv program, first argument is program name, second, the complete command
+      std::cerr << "Problem executing command" << std::endl;  // including the program name
     }
 
     std::cout << "Comando ejecutado" << frst_wrd_command << std::endl;
