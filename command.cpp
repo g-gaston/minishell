@@ -41,7 +41,7 @@ int command_launch(std::string frst_wrd_command, std::string rst_command)
     if (execv(v[0], &v[0]) == -1) {                           // Execv program, first argument is program name, second, the complete command
       std::cerr << "Problem executing command" << std::endl;  // including the program name
     }
-  
+
     exit(EXIT_FAILURE);
   } else if (pid < 0) {
     // Error forking
@@ -50,17 +50,20 @@ int command_launch(std::string frst_wrd_command, std::string rst_command)
     //Parent process waiting for a signal. Either timer or execution.
     std::string response="";
     int killed=0;
+    int wait_seconds = 5;
     time(&iniTime);
     do {
       usleep(100);
       wpid = waitpid(pid, &status, WNOHANG);
       time(&execTime);
-      if (execTime-iniTime >= 5 && response == ""){
-        std::cout << "5 seconds have passed, do you want to kill the process? (y/n): ";
+      if (execTime-iniTime >= wait_seconds){
+        std::cout << wait_seconds << " seconds have passed, do you want to kill the process? (y/n): ";
         std::getline (std::cin, response);
         if(response == "y"){
           kill(pid, 15);
           killed=1;
+        } else {
+          wait_seconds += 5;
         }
       }
 
