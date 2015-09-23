@@ -103,6 +103,8 @@ int main (int argc, char **argv) {
 
 	while (true) {
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
+			frst_wrd_command = "";
+			rst_command = "";
 			std::cout << std::string(cwd) << "$ "; 				// Print prompt
 			std::getline (std::cin, rst_command);				// Read user command
 			std::istringstream aux_stream (rst_command);
