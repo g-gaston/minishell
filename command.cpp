@@ -8,34 +8,16 @@
 #include <vector>
 #include <list>
 #include <sstream>
+#include <time.h>
 
 
 pid_t pid;
-typedef void sigfunc(int);
-
-//Signal handler
-void sig_handler(int sig)
-{
-  std::string response;
-    if (sig == SIGALRM){
-        std::cout << "5 seconds have passed, do you want to kill the process? (y/n): ";
-        std::cin >> response;
-        if(response == "y")
-          kill(pid, 9);
-      }
-}
-
 
 int command_launch(std::string frst_wrd_command, std::string rst_command)
 {
   pid_t wpid;
   int status;
-
-  //Registering the handler in the kernel
-  if (signal(SIGALRM, sig_handler) == SIG_ERR)
-#ifdef DEBUG
-      std::cout << "\ncan't catch SIGALRM\n" << std::endl;
-#endif
+  time_t iniTime, execTime;
 
   pid = fork();
   if (pid == 0) {
@@ -59,20 +41,30 @@ int command_launch(std::string frst_wrd_command, std::string rst_command)
     if (execv(v[0], &v[0]) == -1) {                           // Execv program, first argument is program name, second, the complete command
       std::cerr << "Problem executing command" << std::endl;  // including the program name
     }
-
-    std::cout << "Comando ejecutado" << frst_wrd_command << std::endl;
-    //clean up:
-    delete [] myArr;
+  
     exit(EXIT_FAILURE);
   } else if (pid < 0) {
     // Error forking
     std::cerr << "Problem executing command: error in the forking process" << std::endl;
   } else{
     //Parent process waiting for a signal. Either timer or execution.
-    alarm(5);
+    std::string response="";
+    int killed=0;
+    time(&iniTime);
     do {
-      wpid = waitpid(pid, &status, WUNTRACED);
-    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+      usleep(100);
+      wpid = waitpid(pid, &status, WNOHANG);
+      time(&execTime);
+      if (execTime-iniTime >= 5 && response == ""){
+        std::cout << "5 seconds have passed, do you want to kill the process? (y/n): ";
+        std::getline (std::cin, response);
+        if(response == "y"){
+          kill(pid, 15);
+          killed=1;
+        }
+      }
+
+    } while (!WIFEXITED(status) && !killed);
   }
   return 1;
 }
