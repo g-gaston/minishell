@@ -16,7 +16,7 @@ pid_t pid;
 int command_launch(std::string frst_wrd_command, std::string rst_command)
 {
   pid_t wpid;
-  int status;
+  int status, result;
   time_t iniTime, execTime;
 
   pid = fork();
@@ -63,11 +63,14 @@ int command_launch(std::string frst_wrd_command, std::string rst_command)
           kill(pid, 15);
           killed=1;
         } else {
-          wait_seconds += 5;
+          time(&execTime);
+          wait_seconds = execTime - iniTime + 5; //Increment from the passed time
         }
       }
 
     } while (!WIFEXITED(status) && !killed);
   }
-  return 1;
+  if(WEXITSTATUS(status) == EXIT_SUCCESS)
+    result =1;
+  return result;
 }
