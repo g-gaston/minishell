@@ -59,6 +59,34 @@ std::vector<Program> &listprograms(const char *name, int level, std::vector<Prog
     return programs;
 }
 
+int find_and_exec(std::vector<Program> &programs, std::string frst_wrd_command, std::string rst_command) {
+	std::vector<Program>::iterator i;
+	for (i = programs.begin(); i != programs.end(); ++i) {
+	    if ((*i).get_name() == frst_wrd_command) {
+	    	break;
+	    }
+	}
+	if (i != programs.end()) {
+		// Call here the program in "(*i).get_path()"
+		//The execvp() look for the command in the PATH, so maybe this part could be reduced
+		if(command_launch((*i).get_path() + " " + rst_command) != 1){
+			std::cerr << "Problem executing the command " << frst_wrd_command << std::endl;
+			return -1;
+		}
+		return 0;
+	} else {
+		std::cout << frst_wrd_command << ": program not found " << std::endl;
+		return -1;
+	}
+}
+
+void process_comand (std::string &frst_wrd_command, std::string &rst_command, std::string complete_command) {
+	std::istringstream aux_stream(complete_command);
+	std::getline(aux_stream, frst_wrd_command, ' ');	// Get user command first word
+	std::getline(aux_stream, rst_command);
+	return;
+}
+
 int main (int argc, char **argv) {
 
 	// Get user home dir
@@ -187,29 +215,17 @@ int main (int argc, char **argv) {
 				}
 				if_commands.push_back(frst_wrd_command);	// Third command
 				// Call here subprocess with those arguments
-
-			} else {	   // Should be a program from PATH
-				std::vector<Program>::iterator i;
-				for (i = programs.begin(); i != programs.end(); ++i) {
-				    if ((*i).get_name() == frst_wrd_command) {
-				    	std::cout << "Found program " << (*i).get_name() << " in " << (*i).get_path() << std::endl;
-				    	break;
-				    }
-				}
-				if (i != programs.end()) {
-					// Call here the program in "(*i).get_path()"
-					//The execvp() look for the command in the PATH, so maybe this part could be reduce
-					if(command_launch((*i).get_path() + " " + rst_command) != 1){
-						std::cerr << "Problem executing the command " << frst_wrd_command << std::endl;
-					}
-
-
-
-
+				frst_wrd_command = "";
+				rst_command = "";
+				process_comand(frst_wrd_command, rst_command, if_commands[0]);
+				if (find_and_exec(programs, frst_wrd_command, rst_command) == 0) {
+					process_comand(frst_wrd_command, rst_command, if_commands[1]);
 				} else {
-					std::cout << frst_wrd_command << ": program not found " << std::endl;
+					process_comand(frst_wrd_command, rst_command, if_commands[2]);
 				}
-
+				find_and_exec(programs, frst_wrd_command, rst_command);
+			} else {	   // Should be a program from PATH
+				find_and_exec(programs, frst_wrd_command, rst_command);
 			}
 		}
 
