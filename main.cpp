@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <pwd.h>
 #include "program.h"
+#include "command.h"
 #include "alias.h"
 
 #ifndef PROFILE_FILE_PATH
@@ -102,6 +103,8 @@ int main (int argc, char **argv) {
 
 	while (true) {
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
+			frst_wrd_command = "";
+			rst_command = "";
 			std::cout << std::string(cwd) << "$ "; 				// Print prompt
 			std::getline (std::cin, rst_command);				// Read user command
 			std::istringstream aux_stream (rst_command);
@@ -195,6 +198,14 @@ int main (int argc, char **argv) {
 				}
 				if (i != programs.end()) {
 					// Call here the program in "(*i).get_path()"
+					//The execvp() look for the command in the PATH, so maybe this part could be reduce
+					if(command_launch((*i).get_path() + " " + rst_command) != 1){
+						std::cerr << "Problem executing the command " << frst_wrd_command << std::endl;
+					}
+
+
+
+
 				} else {
 					std::cout << frst_wrd_command << ": program not found " << std::endl;
 				}
