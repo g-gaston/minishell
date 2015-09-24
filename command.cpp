@@ -25,13 +25,26 @@ int command_launch(std::string command)
 
     std::istringstream ss(command);
     std::string arg;
+    std::string arg_quot = "";
     std::list<std::string> ls;
     std::vector<char*> v;
 
-    while (ss >> arg)                                         // Construct vector word by word, does not support quoting
-    {                                                         // Quotes should be processes as one only argument, needs improvement
+    while (ss >> arg) {                                       // Construct vector word by word, support quoting
+      if (arg[0] == '"' && arg_quot == "") {
+        arg_quot = arg.substr(1, arg.size()-1);
+        continue;
+      }
+
+      if (arg.back() == '"' && arg_quot != "") {
+        arg = arg_quot + " " + arg.substr(0, arg.size()-1);
+      } else if (arg.back() != '"' && arg_quot != "") {
+        arg_quot += " " + arg;
+        continue;
+      }
+
        ls.push_back(arg);
        v.push_back(const_cast<char*>(ls.back().c_str()));
+       arg_quot = "";
     }
     v.push_back(0);  // need terminating null pointer
 
