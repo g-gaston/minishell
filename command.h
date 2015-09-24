@@ -13,6 +13,6 @@
 typedef void sigfunc(int);
 
 void sig_handler(int sig);
-int command_launch(std::string frst_wrd_command, std::string rst_command);
+int command_launch(std::string command);
 
 #endif

@@ -13,7 +13,7 @@
 
 pid_t pid;
 
-int command_launch(std::string frst_wrd_command, std::string rst_command)
+int command_launch(std::string command)
 {
   pid_t wpid;
   int status, result;
@@ -23,13 +23,10 @@ int command_launch(std::string frst_wrd_command, std::string rst_command)
   if (pid == 0) {
     // Child process
 
-    std::istringstream ss(rst_command);
+    std::istringstream ss(command);
     std::string arg;
     std::list<std::string> ls;
     std::vector<char*> v;
-
-    ls.push_back(frst_wrd_command);                           // Program name in first position
-    v.push_back(const_cast<char*>(ls.back().c_str()));
 
     while (ss >> arg)                                         // Construct vector word by word, does not support quoting
     {                                                         // Quotes should be processes as one only argument, needs improvement
