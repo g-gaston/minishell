@@ -94,6 +94,16 @@ int main (int argc, char **argv) {
 	// Get user home dir
 	std::string home = std::string(getpwuid(getuid())->pw_dir) + "/";
 
+	// If argument, try to read from script file
+	std::ifstream script_file;
+	if (argc == 2) {
+		script_file.open(std::string(argv[1]));
+		if (!script_file) {
+			std::cerr << "Can't read the script " << argv[1] << "." << std::endl;
+			return -1;
+		}
+	}
+
 	// Process profile file
 	std::ifstream profile_file(home + PROFILE_FILE_PATH);
 	std::vector<std::string> paths;
@@ -138,8 +148,15 @@ int main (int argc, char **argv) {
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
 			frst_wrd_command = "";
 			rst_command = "";
-			std::cout << std::string(cwd) << "$ "; 				// Print prompt
-			std::getline (std::cin, rst_command);				// Read user command
+			if (script_file) {
+				if (! std::getline(script_file, rst_command)) {
+					script_file.close();
+					continue;
+				}
+			} else {
+				std::cout << std::string(cwd) << "$ "; 				// Print prompt
+				std::getline (std::cin, rst_command);				// Read user command
+			}
 			std::istringstream aux_stream (rst_command);
 			while (aux_stream.peek() == ' ') { 					// Skip spaces at beginning
 				aux_stream.get();
@@ -149,6 +166,16 @@ int main (int argc, char **argv) {
 			std::getline(aux_stream, rst_command);				// Get rest of user command
 
 			if (frst_wrd_command.size() == 0) {					// Skip if empty line
+				continue;
+			}
+
+			if (frst_wrd_command.substr(0, 2) == "./") {
+				script_file.open(frst_wrd_command.substr(2, frst_wrd_command.size()));
+				if (!script_file) {
+					std::cerr << "Can't read the script "
+					<< frst_wrd_command.substr(2, frst_wrd_command.size())
+					<< "." << std::endl;
+				}
 				continue;
 			}
 
