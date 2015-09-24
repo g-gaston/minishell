@@ -13,8 +13,7 @@
 
 pid_t pid;
 
-int command_launch(std::string command)
-{
+int command_launch(std::string command, bool alarm) {
   pid_t wpid;
   int status, result;
   time_t iniTime, execTime;
@@ -56,7 +55,7 @@ int command_launch(std::string command)
   } else if (pid < 0) {
     // Error forking
     std::cerr << "Problem executing command: error in the forking process" << std::endl;
-  } else{
+  } else {
     //Parent process waiting for a signal. Either timer or execution.
     std::string response="";
     int killed=0;
@@ -66,7 +65,7 @@ int command_launch(std::string command)
       usleep(100);
       wpid = waitpid(pid, &status, WNOHANG);
       time(&execTime);
-      if (execTime-iniTime >= wait_seconds){
+      if (alarm && execTime-iniTime >= wait_seconds){
         kill(pid, SIGSTOP);
         std::cout << wait_seconds << " seconds have passed, do you want to kill the process? (y/n): ";
         std::getline (std::cin, response);

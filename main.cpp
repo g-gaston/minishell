@@ -59,7 +59,9 @@ std::vector<Program> &listprograms(const char *name, int level, std::vector<Prog
     return programs;
 }
 
-int find_and_exec(std::vector<Program> &programs, std::string frst_wrd_command, std::string rst_command) {
+int find_and_exec(std::vector<Program> &programs, std::string frst_wrd_command,
+				  std::string rst_command, bool alarm) {
+
 	std::vector<Program>::iterator i;
 	for (i = programs.begin(); i != programs.end(); ++i) {
 	    if ((*i).get_name() == frst_wrd_command) {
@@ -69,7 +71,7 @@ int find_and_exec(std::vector<Program> &programs, std::string frst_wrd_command, 
 	if (i != programs.end()) {
 		// Call here the program in "(*i).get_path()"
 		//The execvp() look for the command in the PATH, so maybe this part could be reduced
-		if(command_launch((*i).get_path() + " " + rst_command) != 1){
+		if(command_launch((*i).get_path() + " " + rst_command, alarm) != 1){
 			std::cerr << "Problem executing the command " << frst_wrd_command << std::endl;
 			return -1;
 		}
@@ -96,6 +98,7 @@ int main (int argc, char **argv) {
 	std::ifstream profile_file(home + PROFILE_FILE_PATH);
 	std::vector<std::string> paths;
 	std::vector<Program> programs;
+	bool alarm = true;
 
 	if (!profile_file) {
 		std::cerr << "I can't read the profile " << PROFILE_FILE_PATH << "." << std::endl;
@@ -117,6 +120,8 @@ int main (int argc, char **argv) {
 				std::cerr << "Problem opening home directory: " << home << std::endl;
 				return -1;
 			}
+		} else if (line == "ALARM=OFF") {
+			alarm = false;
 		}
 	}
 
@@ -218,14 +223,14 @@ int main (int argc, char **argv) {
 				frst_wrd_command = "";
 				rst_command = "";
 				process_comand(frst_wrd_command, rst_command, if_commands[0]);
-				if (find_and_exec(programs, frst_wrd_command, rst_command) == 0) {
+				if (find_and_exec(programs, frst_wrd_command, rst_command, alarm) == 0) {
 					process_comand(frst_wrd_command, rst_command, if_commands[1]);
 				} else {
 					process_comand(frst_wrd_command, rst_command, if_commands[2]);
 				}
-				find_and_exec(programs, frst_wrd_command, rst_command);
+				find_and_exec(programs, frst_wrd_command, rst_command, alarm);
 			} else {	   // Should be a program from PATH
-				find_and_exec(programs, frst_wrd_command, rst_command);
+				find_and_exec(programs, frst_wrd_command, rst_command, alarm);
 			}
 		}
 

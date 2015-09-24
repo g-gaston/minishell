@@ -13,6 +13,6 @@
 typedef void sigfunc(int);
 
 void sig_handler(int sig);
-int command_launch(std::string command);
+int command_launch(std::string command, bool alarm);
 
 #endif
