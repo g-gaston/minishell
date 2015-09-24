@@ -54,8 +54,10 @@ int command_launch(std::string command)
       wpid = waitpid(pid, &status, WNOHANG);
       time(&execTime);
       if (execTime-iniTime >= wait_seconds){
+        kill(pid, SIGSTOP);
         std::cout << wait_seconds << " seconds have passed, do you want to kill the process? (y/n): ";
         std::getline (std::cin, response);
+        kill(pid, SIGCONT);
         if(response == "y"){
           kill(pid, 15);
           killed=1;
