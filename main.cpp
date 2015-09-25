@@ -139,11 +139,16 @@ int main (int argc, char **argv) {
 	char cwd[1024]; 				// Current working directory max length is 1024
 
   // Anadido redireccion
-  fpos_t pos;
-  fgetpos(stdout, &pos);
-  int fw = -1;
+  int saved_stdout = dup(1);
+  int std_out = 1;
+  FILE* fw;
   // Anadido redireccion
 	while (true) {
+    if (!std_out) {
+      dup2(saved_stdout, 1);
+      fclose(fw);
+      std_out = 1;
+    }   
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
 			frst_wrd_command = "";
 			rst_command = "";
@@ -178,19 +183,21 @@ int main (int argc, char **argv) {
         		frst_wrd_command = alias_command.substr(0, space);
 				rst_command = alias_command.substr(space+1); // + rst_command;
 			}
-      // Anadido redirection 
-      if (rst_command.find(">") > 0) {
+      // Anadido redirection
+      if ((int)rst_command.find(">") >= 0) {
         std::vector<std::string> rest_cmd_redir;
         split(rst_command, '>', rest_cmd_redir);
-        std::string file_path = rest_cmd_redir.at(0);
-        rst_command = rest_cmd_redir.at(1);
-        fw=open("ia.txt", O_APPEND|O_WRONLY);
-      } else {
-        if (fw >= 0) {
-          dup2(fw, 1);
-          close(fw);
-          fsetpos(stdout, &pos);
-        }   
+        std::string file_path = rest_cmd_redir.at(1);
+        if (file_path.at(0) == ' ') 
+          file_path = file_path.substr(1);
+        rst_command = rest_cmd_redir.at(0);
+        fw=fopen(file_path.c_str(), "a+");
+        if (fw < 0 ) {
+          std::cout << "Couldn't open " << file_path << std::endl;
+        } else {
+          dup2(fileno(fw), 1);
+          std_out = 0;
+        }
       }
       // Anadido redirection
       if (frst_wrd_command == "cd") {
