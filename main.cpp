@@ -11,6 +11,10 @@
 #include "program.h"
 #include "command.h"
 #include "alias.h"
+// Anadido redirec
+#include <unistd.h>
+#include <fcntl.h>
+// Anadido redirec
 
 #ifndef PROFILE_FILE_PATH
 #define PROFILE_FILE_PATH ".shell_profile"
@@ -134,6 +138,11 @@ int main (int argc, char **argv) {
 	std::string rst_command;		// Rest of the command
 	char cwd[1024]; 				// Current working directory max length is 1024
 
+  // Anadido redireccion
+  fpos_t pos;
+  fgetpos(stdout, &pos);
+  int fw = -1;
+  // Anadido redireccion
 	while (true) {
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
 			frst_wrd_command = "";
@@ -168,7 +177,23 @@ int main (int argc, char **argv) {
 				int space = alias_command.find(" ");
         		frst_wrd_command = alias_command.substr(0, space);
 				rst_command = alias_command.substr(space+1); // + rst_command;
-			} else if (frst_wrd_command == "cd") {
+			}
+      // Anadido redirection 
+      if (rst_command.find(">") > 0) {
+        std::vector<std::string> rest_cmd_redir;
+        split(rst_command, '>', rest_cmd_redir);
+        std::string file_path = rest_cmd_redir.at(0);
+        rst_command = rest_cmd_redir.at(1);
+        fw=open("ia.txt", O_APPEND|O_WRONLY);
+      } else {
+        if (fw >= 0) {
+          dup2(fw, 1);
+          close(fw);
+          fsetpos(stdout, &pos);
+        }   
+      }
+      // Anadido redirection
+      if (frst_wrd_command == "cd") {
 				if (rst_command.size() == 0) {
 					if (chdir(home.c_str()) != 0) {
 						std::cerr << "Problem opening directory: " << home << std::endl;
