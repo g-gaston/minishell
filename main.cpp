@@ -11,10 +11,10 @@
 #include "program.h"
 #include "command.h"
 #include "alias.h"
-// Anadido redirec
-#include <unistd.h>
-#include <fcntl.h>
-// Anadido redirec
+// Añadido redirec
+//#include <unistd.h>
+//#include <fcntl.h>
+// Añadido redirec
 
 #ifndef PROFILE_FILE_PATH
 #define PROFILE_FILE_PATH ".shell_profile"
@@ -138,11 +138,11 @@ int main (int argc, char **argv) {
 	std::string rst_command;		// Rest of the command
 	char cwd[1024]; 				// Current working directory max length is 1024
 
-  // Anadido redireccion
+  // Añadido redireccion
   int saved_stdout = dup(1);
   int std_out = 1;
   FILE* fw;
-  // Anadido redireccion
+  // Añadido redireccion
 	while (true) {
     if (!std_out) {
       dup2(saved_stdout, 1);
@@ -177,13 +177,13 @@ int main (int argc, char **argv) {
 				else
         	insert_alias(rst_command, '=', alias, alias_path, 0);
 			} else if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
-        		int alias_elem = is_alias(frst_wrd_command, alias);
+        int alias_elem = is_alias(frst_wrd_command, alias);
 				std::string alias_command = std::get<1>(alias[alias_elem]);
 				int space = alias_command.find(" ");
-        		frst_wrd_command = alias_command.substr(0, space);
-				rst_command = alias_command.substr(space+1); // + rst_command;
+        frst_wrd_command = alias_command.substr(0, space);
+				rst_command = alias_command.substr(space+1) + " " + rst_command;
 			}
-      // Anadido redirection
+      // Añadido redirection
       if ((int)rst_command.find(">") >= 0) {
         std::vector<std::string> rest_cmd_redir;
         split(rst_command, '>', rest_cmd_redir);
@@ -199,7 +199,7 @@ int main (int argc, char **argv) {
           std_out = 0;
         }
       }
-      // Anadido redirection
+      // Añadido redirection
       if (frst_wrd_command == "cd") {
 				if (rst_command.size() == 0) {
 					if (chdir(home.c_str()) != 0) {
