@@ -60,7 +60,7 @@ int check_alias (std::string new_alias, std::string new_command, std::vector<ali
   // Avoid loops with aliases
   for (int i = 0; i < alias_list.size(); i++) {
     if (new_alias == std::get<1>(alias_list[i]) | new_command == std::get<0>(alias_list[i])) {
-      std::cerr << "Loophole avoided" << std::endl;
+      std::cerr << "Loop avoided" << std::endl;
       return -1;
     }
   }
