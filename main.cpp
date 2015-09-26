@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <pwd.h>
 #include "program.h"
+#include "command.h"
 #include "alias.h"
 
 #ifndef PROFILE_FILE_PATH
@@ -58,6 +59,36 @@ std::vector<Program> &listprograms(const char *name, int level, std::vector<Prog
     return programs;
 }
 
+int find_and_exec(std::vector<Program> &programs, std::string frst_wrd_command,
+				  std::string rst_command, bool alarm) {
+
+	std::vector<Program>::iterator i;
+	for (i = programs.begin(); i != programs.end(); ++i) {
+	    if ((*i).get_name() == frst_wrd_command) {
+	    	break;
+	    }
+	}
+	if (i != programs.end()) {
+		// Call here the program in "(*i).get_path()"
+		//The execvp() look for the command in the PATH, so maybe this part could be reduced
+		if(command_launch((*i).get_path() + " " + rst_command, alarm) != 1){
+			std::cerr << "Problem executing the command " << frst_wrd_command << std::endl;
+			return -1;
+		}
+		return 0;
+	} else {
+		std::cout << frst_wrd_command << ": program not found " << std::endl;
+		return -1;
+	}
+}
+
+void process_comand (std::string &frst_wrd_command, std::string &rst_command, std::string complete_command) {
+	std::istringstream aux_stream(complete_command);
+	std::getline(aux_stream, frst_wrd_command, ' ');	// Get user command first word
+	std::getline(aux_stream, rst_command);
+	return;
+}
+
 int main (int argc, char **argv) {
 
 	// Get user home dir
@@ -72,6 +103,7 @@ int main (int argc, char **argv) {
 	std::ifstream profile_file(home + PROFILE_FILE_PATH);
 	std::vector<std::string> paths;
 	std::vector<Program> programs;
+	bool alarm = true;
 
 	if (!profile_file) {
 		std::cerr << "I can't read the profile " << PROFILE_FILE_PATH << "." << std::endl;
@@ -93,6 +125,8 @@ int main (int argc, char **argv) {
 				std::cerr << "Problem opening home directory: " << home << std::endl;
 				return -1;
 			}
+		} else if (line == "ALARM=OFF") {
+			alarm = false;
 		}
 	}
 
@@ -102,6 +136,8 @@ int main (int argc, char **argv) {
 
 	while (true) {
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
+			frst_wrd_command = "";
+			rst_command = "";
 			std::cout << std::string(cwd) << "$ "; 				// Print prompt
 			std::getline (std::cin, rst_command);				// Read user command
 			std::istringstream aux_stream (rst_command);
@@ -144,20 +180,59 @@ int main (int argc, char **argv) {
 						std::cerr << "Problem opening directory: " << rst_command << std::endl;
 					}
 				}
-			} else {	   // Should be a program from PATH
-				std::vector<Program>::iterator i;
-				for (i = programs.begin(); i != programs.end(); ++i) {
-				    if ((*i).get_name() == frst_wrd_command) {
-				    	std::cout << "Found program " << (*i).get_name() << " in " << (*i).get_path() << std::endl;
-				    	break;
-				    }
+			} else if (frst_wrd_command == "if") {
+				std::vector<std::string> if_commands;
+				aux_stream.clear();
+				aux_stream.seekg (0, aux_stream.beg);
+				aux_stream.str(rst_command);
+				std::getline(aux_stream, rst_command, ';'); // First command
+				if_commands.push_back(rst_command);
+				aux_stream >> rst_command;
+				if (rst_command != "then") {
+					/* error, malformed if then command */
+					std::cerr << "error, malformed if-then command, \"then\" not detected, instead " << rst_command << std::endl;
+					continue;
 				}
-				if (i != programs.end()) {
-					// Call here the program in "(*i).get_path()"
+				aux_stream.get(); // Skip space
+				std::getline(aux_stream, rst_command, ';'); // Second command
+				if_commands.push_back(rst_command);
+				aux_stream >> rst_command;
+				if (rst_command != "else") {
+					/* error, malformed if then command */
+					std::cerr << "error, malformed if-then command: \"else\" not detected, instead " << rst_command << std::endl;
+					continue;
+				}
+				aux_stream.get(); // Skip space
+				aux_stream >> frst_wrd_command;
+				if (frst_wrd_command == "fi") {
+					std::cerr << "error, malformed if-then command: \"fi\" detected, instead of third command" << std::endl;
+					continue;
+				}
+				while (aux_stream >> rst_command) {
+					if (rst_command != "fi") {
+						frst_wrd_command = frst_wrd_command + " " + rst_command;
+					} else {
+						break;
+					}
+				}
+				if (rst_command != "fi") {
+					/* error, malformed if then command */
+					std::cerr << "error, malformed if-then command: \"fi\" not detected, instead " << rst_command << std::endl;
+					continue;
+				}
+				if_commands.push_back(frst_wrd_command);	// Third command
+				// Call here subprocess with those arguments
+				frst_wrd_command = "";
+				rst_command = "";
+				process_comand(frst_wrd_command, rst_command, if_commands[0]);
+				if (find_and_exec(programs, frst_wrd_command, rst_command, alarm) == 0) {
+					process_comand(frst_wrd_command, rst_command, if_commands[1]);
 				} else {
-					std::cout << frst_wrd_command << ": program not found " << std::endl;
+					process_comand(frst_wrd_command, rst_command, if_commands[2]);
 				}
-
+				find_and_exec(programs, frst_wrd_command, rst_command, alarm);
+			} else {	   // Should be a program from PATH
+				find_and_exec(programs, frst_wrd_command, rst_command, alarm);
 			}
 		}
 
