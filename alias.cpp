@@ -15,39 +15,44 @@ std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::ve
   // Get words from line
   std::stringstream ss(s);
   std::string items[2];
-  for (int i = 0; i < 2; i++) {
-    std::getline(ss, items[i], delim);
-  }
-	// Remove " or ' when needed
-	if (items[1].size() > 0) {
-  	if (items[1].at(0) == '"' | items[1].at(0) == '\'')
-			items[1] = items[1].substr(1, items[1].size());
-		if (items[1].at(items[1].size()-1) == '"' | items[1].at(items[1].size()-1) == '\'')
-			items[1] = items[1].substr(0, items[1].size()-1);
-	}
-  // Check alias and update vector (do nothing if check_alias returns error)
-  int check = check_alias(items[0], items[1], elems);
-  // Element repeated
-  if (check > 0) {
-    elems.erase(elems.begin()+check-1);
-    std::ofstream ofs;
-    ofs.open(alias_path, std::ofstream::out | std::ofstream::trunc);
-    for (int i = 0; i < elems.size(); i++) {
-      ofs << std::get<0>(elems[i]) << "=\"" << std::get<1>(elems[i]) << "\"\n";
+  if ((int)s.find("=") > 0) {
+    std::cout << "find: " << (int)s.find("=") << std::endl;
+    for (int i = 0; i < 2; i++) {
+      std::getline(ss, items[i], delim);
     }
-    ofs.close();
-  }
-  // Add element
-  if (check >= 0) {
-    elems.push_back(alias_tuple(items[0], items[1]));
-		// If we're not loading the aliases from the file, we update the file
-    if (!from_file) {
-      std::ofstream out(alias_path, std::ios::app);
-      out << items[0] << "=\"" << items[1] << "\"\n";
-      out.close();
+		// Remove " or ' when needed
+		if (items[1].size() > 0) {
+	  	if (items[1].at(0) == '"' | items[1].at(0) == '\'')
+				items[1] = items[1].substr(1, items[1].size());
+			if (items[1].at(items[1].size()-1) == '"' | items[1].at(items[1].size()-1) == '\'')
+				items[1] = items[1].substr(0, items[1].size()-1);
+		}
+	  // Check alias and update vector (do nothing if check_alias returns error)
+	  int check = check_alias(items[0], items[1], elems);
+	  // Element repeated
+	  if (check > 0) {
+	    elems.erase(elems.begin()+check-1);
+	    std::ofstream ofs;
+	    ofs.open(alias_path, std::ofstream::out | std::ofstream::trunc);
+	    for (int i = 0; i < elems.size(); i++) {
+	      ofs << std::get<0>(elems[i]) << "=\"" << std::get<1>(elems[i]) << "\"\n";
+	    }
+	    ofs.close();
+	  }
+	  // Add element
+	  if (check >= 0) {
+	    elems.push_back(alias_tuple(items[0], items[1]));
+			// If we're not loading the aliases from the file, we update the file
+	    if (!from_file) {
+	      std::ofstream out(alias_path, std::ios::app);
+	      out << items[0] << "=\"" << items[1] << "\"\n";
+	      out.close();
+	    }
     }
-  }
+  } else {
+    std::cout << "Malformed alias command" << std::endl;
 
+  }
   return elems;
 }
 
