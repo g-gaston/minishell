@@ -11,6 +11,10 @@
 #include "program.h"
 #include "command.h"
 #include "alias.h"
+// Añadido redirec
+//#include <unistd.h>
+//#include <fcntl.h>
+// Añadido redirec
 
 #ifndef PROFILE_FILE_PATH
 #define PROFILE_FILE_PATH ".shell_profile"
@@ -134,7 +138,17 @@ int main (int argc, char **argv) {
 	std::string rst_command;		// Rest of the command
 	char cwd[1024]; 				// Current working directory max length is 1024
 
+  // Añadido redireccion
+  int saved_stdout = dup(1);
+  int std_out = 1;
+  FILE* fw;
+  // Añadido redireccion
 	while (true) {
+    if (!std_out) {
+      dup2(saved_stdout, 1);
+      fclose(fw);
+      std_out = 1;
+    }
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
 			frst_wrd_command = "";
 			rst_command = "";
@@ -153,11 +167,33 @@ int main (int argc, char **argv) {
 			}
 
 			if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
-        		int alias_elem = is_alias(frst_wrd_command, alias);
+       	int alias_elem = is_alias(frst_wrd_command, alias);
 				std::string alias_command = std::get<1>(alias[alias_elem]);
 				int space = alias_command.find(" ");
-        		frst_wrd_command = alias_command.substr(0, space);
-				rst_command = alias_command.substr(space+1); // + rst_command;
+       	frst_wrd_command = alias_command.substr(0, space);
+				rst_command = alias_command.substr(space+1) + " " + rst_command;
+			}
+
+			// Redirection
+			if ((int)rst_command.find(">") >= 0) {
+				std::vector<std::string> rest_cmd_redir;
+				split(rst_command, '>', rest_cmd_redir);
+				if (rest_cmd_redir.size() < 2 || rest_cmd_redir.at(1) == "") {
+				  std::cout << "Malformed redirection command" << std::endl;
+				  rst_command = "";
+				} else {
+					std::string file_path = rest_cmd_redir.at(1);
+					if (file_path.at(0) == ' ')
+						file_path = file_path.substr(1);
+					rst_command = rest_cmd_redir.at(0);
+					fw=fopen(file_path.c_str(), "a+");
+					if (fw < 0 ) {
+						std::cout << "Couldn't open " << file_path << std::endl;
+					} else {
+						dup2(fileno(fw), 1);
+						std_out = 0;
+					}
+				}
 			}
 
 			if (frst_wrd_command == "quit" ||
@@ -170,7 +206,7 @@ int main (int argc, char **argv) {
 					print_alias(alias);
 				else
         			insert_alias(rst_command, '=', alias, alias_path, 0);
-			} else if (frst_wrd_command == "cd") {
+			} else	if (frst_wrd_command == "cd") {
 				if (rst_command.size() == 0) {
 					if (chdir(home.c_str()) != 0) {
 						std::cerr << "Problem opening directory: " << home << std::endl;

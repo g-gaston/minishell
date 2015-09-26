@@ -10,7 +10,6 @@
 #include <sstream>
 #include <time.h>
 
-
 pid_t pid;
 
 int command_launch(std::string command, bool alarm) {
@@ -46,11 +45,21 @@ int command_launch(std::string command, bool alarm) {
        arg_quot = "";
     }
     v.push_back(0);  // need terminating null pointer
-
+    // Anadido redirect
+/*    fpos_t pos;
+    fgetpos(stdout, &pos);
+    int fw=open("ia.txt", O_APPEND|O_WRONLY);
+    dup2(fw, 1);
+    //fclose(fw);
+    // Anadido redirect
+    //dup2(1,1);
+    close(fw);
+    fsetpos(stdout, &pos);   
+    // Close anadido redirect
+*/    // Close anadido redirect
     if (execv(v[0], &v[0]) == -1) {                           // Execv program, first argument is program name, second, the complete command
       std::cerr << "Problem executing command" << std::endl;  // including the program name
     }
-
     exit(EXIT_FAILURE);
   } else if (pid < 0) {
     // Error forking
