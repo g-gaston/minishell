@@ -11,6 +11,10 @@
 #include "program.h"
 #include "command.h"
 #include "alias.h"
+// Añadido redirec
+//#include <unistd.h>
+//#include <fcntl.h>
+// Añadido redirec
 
 #ifndef PROFILE_FILE_PATH
 #define PROFILE_FILE_PATH ".shell_profile"
@@ -71,7 +75,7 @@ int find_and_exec(std::vector<Program> &programs, std::string frst_wrd_command,
 	if (i != programs.end()) {
 		// Call here the program in "(*i).get_path()"
 		//The execvp() look for the command in the PATH, so maybe this part could be reduced
-		if(command_launch((*i).get_path() + " " + rst_command, alarm) != 1){
+		if(command_launch((*i).get_path() + " " + rst_command, alarm) != 0){
 			std::cerr << "Problem executing the command " << frst_wrd_command << std::endl;
 			return -1;
 		}
@@ -104,6 +108,11 @@ int main (int argc, char **argv) {
 		}
 	}
 
+	//Process alias file
+  	std::vector<alias_tuple> alias;
+	std::string alias_path = home + ALIAS_FILE;
+  	alias = read_alias(alias_path);
+
 	// Process profile file
 	std::ifstream profile_file(home + PROFILE_FILE_PATH);
 	std::vector<std::string> paths;
@@ -135,16 +144,22 @@ int main (int argc, char **argv) {
 		}
 	}
 
-	//Process alias file
-  	std::vector<alias_tuple> alias;
-	std::string alias_path = home + ALIAS_FILE;
-  	alias = read_alias(alias_path);
-
 	std::string frst_wrd_command;	// First command's word
 	std::string rst_command;		// Rest of the command
 	char cwd[1024]; 				// Current working directory max length is 1024
 
+	// Añadido redireccion
+	int saved_stdout = dup(1);
+	int std_out = 1;
+	FILE* fw;
+	// Añadido redireccion
+
 	while (true) {
+		if (!std_out) {
+		  dup2(saved_stdout, 1);
+		  fclose(fw);
+		  std_out = 1;
+		}
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
 			frst_wrd_command = "";
 			rst_command = "";
@@ -179,6 +194,36 @@ int main (int argc, char **argv) {
 				continue;
 			}
 
+			if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
+	   			int alias_elem = is_alias(frst_wrd_command, alias);
+				std::string alias_command = std::get<1>(alias[alias_elem]);
+				int space = alias_command.find(" ");
+	   			frst_wrd_command = alias_command.substr(0, space);
+				rst_command = alias_command.substr(space+1) + " " + rst_command;
+			}
+
+			// Redirection
+			if ((int)rst_command.find(">") >= 0) {
+				std::vector<std::string> rest_cmd_redir;
+				split(rst_command, '>', rest_cmd_redir);
+				if (rest_cmd_redir.size() < 2 || rest_cmd_redir.at(1) == "") {
+				  std::cout << "Malformed redirection command" << std::endl;
+				  rst_command = "";
+				} else {
+					std::string file_path = rest_cmd_redir.at(1);
+					if (file_path.at(0) == ' ')
+						file_path = file_path.substr(1);
+					rst_command = rest_cmd_redir.at(0);
+					fw=fopen(file_path.c_str(), "a+");
+					if (fw < 0 ) {
+						std::cout << "Couldn't open " << file_path << std::endl;
+					} else {
+						dup2(fileno(fw), 1);
+						std_out = 0;
+					}
+				}
+			}
+
 			if (frst_wrd_command == "quit" ||
 				frst_wrd_command == "Quit" ||
 				frst_wrd_command == "QUIT") {
@@ -188,14 +233,8 @@ int main (int argc, char **argv) {
 				if (rst_command == "")
 					print_alias(alias);
 				else
-        	insert_alias(rst_command, '=', alias, alias_path, 0);
-			} else if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
-        		int alias_elem = is_alias(frst_wrd_command, alias);
-				std::string alias_command = std::get<1>(alias[alias_elem]);
-				int space = alias_command.find(" ");
-        		frst_wrd_command = alias_command.substr(0, space);
-				rst_command = alias_command.substr(space+1); // + rst_command;
-			} else if (frst_wrd_command == "cd") {
+	    			insert_alias(rst_command, '=', alias, alias_path, 0);
+			} else	if (frst_wrd_command == "cd") {
 				if (rst_command.size() == 0) {
 					if (chdir(home.c_str()) != 0) {
 						std::cerr << "Problem opening directory: " << home << std::endl;
@@ -260,7 +299,5 @@ int main (int argc, char **argv) {
 				find_and_exec(programs, frst_wrd_command, rst_command, alarm);
 			}
 		}
-
 	}
-
 }
