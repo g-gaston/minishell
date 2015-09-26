@@ -54,7 +54,7 @@ int command_launch(std::string command, bool alarm) {
     // Anadido redirect
     //dup2(1,1);
     close(fw);
-    fsetpos(stdout, &pos);   
+    fsetpos(stdout, &pos);
     // Close anadido redirect
 */    // Close anadido redirect
     if (execv(v[0], &v[0]) == -1) {                           // Execv program, first argument is program name, second, the complete command
@@ -90,7 +90,6 @@ int command_launch(std::string command, bool alarm) {
 
     } while (!WIFEXITED(status) && !killed);
   }
-  if(WEXITSTATUS(status) == EXIT_SUCCESS)
-    result =1;
-  return result;
+
+  return WEXITSTATUS(status);
 }
