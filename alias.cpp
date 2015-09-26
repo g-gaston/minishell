@@ -16,7 +16,6 @@ std::vector<alias_tuple> &insert_alias(const std::string &s, char delim, std::ve
   std::stringstream ss(s);
   std::string items[2];
   if ((int)s.find("=") > 0) {
-    std::cout << "find: " << (int)s.find("=") << std::endl;
     for (int i = 0; i < 2; i++) {
       std::getline(ss, items[i], delim);
     }
