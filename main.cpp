@@ -63,6 +63,11 @@ int main (int argc, char **argv) {
 	// Get user home dir
 	std::string home = std::string(getpwuid(getuid())->pw_dir) + "/";
 
+	//Process alias file
+  	std::vector<alias_tuple> alias;
+	std::string alias_path = home + ALIAS_FILE;
+  	alias = read_alias(alias_path);
+
 	// Process profile file
 	std::ifstream profile_file(home + PROFILE_FILE_PATH);
 	std::vector<std::string> paths;
@@ -91,11 +96,6 @@ int main (int argc, char **argv) {
 		}
 	}
 
-	//Process alias file
-  	std::vector<alias_tuple> alias;
-	std::string alias_path = home + ALIAS_FILE;
-  	alias = read_alias(alias_path);
-
 	std::string frst_wrd_command;	// First command's word
 	std::string rst_command;		// Rest of the command
 	char cwd[1024]; 				// Current working directory max length is 1024
@@ -116,6 +116,14 @@ int main (int argc, char **argv) {
 				continue;
 			}
 
+			if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
+        		int alias_elem = is_alias(frst_wrd_command, alias);
+				std::string alias_command = std::get<1>(alias[alias_elem]);
+				int space = alias_command.find(" ");
+        		frst_wrd_command = alias_command.substr(0, space);
+				rst_command = alias_command.substr(space+1); // + rst_command;
+			}
+
 			if (frst_wrd_command == "quit" ||
 				frst_wrd_command == "Quit" ||
 				frst_wrd_command == "QUIT") {
@@ -125,13 +133,7 @@ int main (int argc, char **argv) {
 				if (rst_command == "")
 					print_alias(alias);
 				else
-        	insert_alias(rst_command, '=', alias, alias_path, 0);
-			} else if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
-        		int alias_elem = is_alias(frst_wrd_command, alias);
-				std::string alias_command = std::get<1>(alias[alias_elem]);
-				int space = alias_command.find(" ");
-        		frst_wrd_command = alias_command.substr(0, space);
-				rst_command = alias_command.substr(space+1); // + rst_command;
+        			insert_alias(rst_command, '=', alias, alias_path, 0);
 			} else if (frst_wrd_command == "cd") {
 				if (rst_command.size() == 0) {
 					if (chdir(home.c_str()) != 0) {
