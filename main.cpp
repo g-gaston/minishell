@@ -184,7 +184,8 @@ int main (int argc, char **argv) {
 						file_path = file_path.substr(1);
 					rst_command = rest_cmd_redir.at(0);
 					fw=fopen(file_path.c_str(), "a+");
-					if (fw < 0 ) {
+          std::cout << "fopen: " << fw << std::endl;
+					if (fw <= 0 ) {
 						std::cout << "Couldn't open " << file_path << std::endl;
 					} else {                                    // Redirection of output
 						dup2(fileno(fw), 1);
