@@ -197,7 +197,8 @@ int main (int argc, char **argv) {
 				std::string alias_command = std::get<1>(alias[alias_elem]);
 				int space = alias_command.find(" ");
 	   			frst_wrd_command = alias_command.substr(0, space);
-				rst_command = alias_command.substr(space+1) + " " + rst_command;
+        if (space > 0)
+				  rst_command = alias_command.substr(space+1) + " " + rst_command;
 			}
 
 			// Redirection
@@ -213,7 +214,6 @@ int main (int argc, char **argv) {
 						file_path = file_path.substr(1);
 					rst_command = rest_cmd_redir.at(0);
 					fw=fopen(file_path.c_str(), "a+");
-          std::cout << "fopen: " << fw << std::endl;
 					if (fw <= 0 ) {
 						std::cout << "Couldn't open " << file_path << std::endl;
 					} else {                                    // Redirection of output
