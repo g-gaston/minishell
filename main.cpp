@@ -71,7 +71,7 @@ int find_and_exec(std::vector<Program> &programs, std::string frst_wrd_command,
 	if (i != programs.end()) {
 		// Call here the program in "(*i).get_path()"
 		//The execvp() look for the command in the PATH, so maybe this part could be reduced
-		if(command_launch((*i).get_path() + " " + rst_command, alarm) != 1){
+		if(command_launch((*i).get_path() + " " + rst_command, alarm) != 0){
 			std::cerr << "Problem executing the command " << frst_wrd_command << std::endl;
 			return -1;
 		}
@@ -93,6 +93,16 @@ int main (int argc, char **argv) {
 
 	// Get user home dir
 	std::string home = std::string(getpwuid(getuid())->pw_dir) + "/";
+
+	// If argument, try to read from script file
+	std::ifstream script_file;
+	if (argc == 2) {
+		script_file.open(std::string(argv[1]));
+		if (!script_file) {
+			std::cerr << "Can't read the script " << argv[1] << "." << std::endl;
+			return -1;
+		}
+	}
 
 	//Process alias file
   	std::vector<alias_tuple> alias;
@@ -134,23 +144,32 @@ int main (int argc, char **argv) {
 	std::string rst_command;		// Rest of the command
 	char cwd[1024]; 				// Current working directory max length is 1024
 
-  // Redirection variables initialization
-  int saved_stdout = dup(1);
-  int std_out = 1;
-  FILE* fw;
-	
-  while (true) {
-    // Change to stdout if needed
-    if (!std_out) {
-      dup2(saved_stdout, 1);
-      fclose(fw);
-      std_out = 1;
-    }
+
+	// Redirection variables initialization
+	int saved_stdout = dup(1);
+	int std_out = 1;
+	FILE* fw;
+
+	while (true) {
+		// Change to stdout if needed
+	    if (!std_out) {
+	      dup2(saved_stdout, 1);
+	      fclose(fw);
+	      std_out = 1;
+	    }
+
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
 			frst_wrd_command = "";
 			rst_command = "";
-			std::cout << std::string(cwd) << "$ "; 				// Print prompt
-			std::getline (std::cin, rst_command);				// Read user command
+			if (script_file) {
+				if (! std::getline(script_file, rst_command)) {
+					script_file.close();
+					continue;
+				}
+			} else {
+				std::cout << std::string(cwd) << "$ "; 				// Print prompt
+				std::getline (std::cin, rst_command);				// Read user command
+			}
 			std::istringstream aux_stream (rst_command);
 			while (aux_stream.peek() == ' ') { 					// Skip spaces at beginning
 				aux_stream.get();
@@ -163,11 +182,21 @@ int main (int argc, char **argv) {
 				continue;
 			}
 
+			if (frst_wrd_command.substr(0, 2) == "./") {
+				script_file.open(frst_wrd_command.substr(2, frst_wrd_command.size()));
+				if (!script_file) {
+					std::cerr << "Can't read the script "
+					<< frst_wrd_command.substr(2, frst_wrd_command.size())
+					<< "." << std::endl;
+				}
+				continue;
+			}
+
 			if (is_alias(frst_wrd_command, alias) >= 0) { // Alias usage from definitions
-       	int alias_elem = is_alias(frst_wrd_command, alias);
+	   			int alias_elem = is_alias(frst_wrd_command, alias);
 				std::string alias_command = std::get<1>(alias[alias_elem]);
 				int space = alias_command.find(" ");
-       	frst_wrd_command = alias_command.substr(0, space);
+	   			frst_wrd_command = alias_command.substr(0, space);
 				rst_command = alias_command.substr(space+1) + " " + rst_command;
 			}
 
@@ -203,7 +232,7 @@ int main (int argc, char **argv) {
 				if (rst_command == "")
 					print_alias(alias);
 				else
-        			insert_alias(rst_command, '=', alias, alias_path, 0);
+	    			insert_alias(rst_command, '=', alias, alias_path, 0);
 			} else	if (frst_wrd_command == "cd") {
 				if (rst_command.size() == 0) {
 					if (chdir(home.c_str()) != 0) {
@@ -269,7 +298,5 @@ int main (int argc, char **argv) {
 				find_and_exec(programs, frst_wrd_command, rst_command, alarm);
 			}
 		}
-
 	}
-
 }

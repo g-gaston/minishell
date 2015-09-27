@@ -1,5 +1,6 @@
 
 CC=clang++ -DDEBUG=1
+RM=rm -f
 
 all: shell
 
@@ -19,5 +20,5 @@ command.o: command.cpp
 	$(CC) -c command.cpp
 
 clean:
-	$(RM) *o *~ shell
+	$(RM) *.o *~ shell
 
