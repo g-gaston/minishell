@@ -11,10 +11,6 @@
 #include "program.h"
 #include "command.h"
 #include "alias.h"
-// Añadido redirec
-//#include <unistd.h>
-//#include <fcntl.h>
-// Añadido redirec
 
 #ifndef PROFILE_FILE_PATH
 #define PROFILE_FILE_PATH ".shell_profile"
@@ -148,18 +144,20 @@ int main (int argc, char **argv) {
 	std::string rst_command;		// Rest of the command
 	char cwd[1024]; 				// Current working directory max length is 1024
 
-	// Añadido redireccion
+
+	// Redirection variables initialization
 	int saved_stdout = dup(1);
 	int std_out = 1;
 	FILE* fw;
-	// Añadido redireccion
 
 	while (true) {
-		if (!std_out) {
-		  dup2(saved_stdout, 1);
-		  fclose(fw);
-		  std_out = 1;
-		}
+		// Change to stdout if needed
+	    if (!std_out) {
+	      dup2(saved_stdout, 1);
+	      fclose(fw);
+	      std_out = 1;
+	    }
+
 		if (getcwd(cwd, sizeof(cwd)) != NULL) {
 			frst_wrd_command = "";
 			rst_command = "";
@@ -206,18 +204,19 @@ int main (int argc, char **argv) {
 			if ((int)rst_command.find(">") >= 0) {
 				std::vector<std::string> rest_cmd_redir;
 				split(rst_command, '>', rest_cmd_redir);
-				if (rest_cmd_redir.size() < 2 || rest_cmd_redir.at(1) == "") {
+				if (rest_cmd_redir.size() < 2 || rest_cmd_redir.at(1) == "") {  // Malformed command
 				  std::cout << "Malformed redirection command" << std::endl;
-				  rst_command = "";
+					rst_command = rest_cmd_redir.at(0);
 				} else {
 					std::string file_path = rest_cmd_redir.at(1);
-					if (file_path.at(0) == ' ')
+					if (file_path.at(0) == ' ')                                   // Remove space between > and file
 						file_path = file_path.substr(1);
 					rst_command = rest_cmd_redir.at(0);
 					fw=fopen(file_path.c_str(), "a+");
-					if (fw < 0 ) {
+          std::cout << "fopen: " << fw << std::endl;
+					if (fw <= 0 ) {
 						std::cout << "Couldn't open " << file_path << std::endl;
-					} else {
+					} else {                                    // Redirection of output
 						dup2(fileno(fw), 1);
 						std_out = 0;
 					}
